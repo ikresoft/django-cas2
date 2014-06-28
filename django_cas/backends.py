@@ -2,7 +2,6 @@
 
 from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth.models import User
 from django_cas.exceptions import CasTicketException
 from django_cas.models import Tgt, PgtIOU
 from urllib import urlencode, urlopen
@@ -10,6 +9,12 @@ from urlparse import urljoin
 from xml.dom import minidom
 import logging
 import time
+
+try:
+    from django.contrib.auth.models import User
+except:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
 
 __all__ = ['CASBackend']
 
@@ -24,7 +29,7 @@ class CASBackend(ModelBackend):
         (username, proxies) = self._verify(ticket, service)
         if not username:
             return None
-        
+
         if settings.CAS_ALLOWED_PROXIES:
             for proxy in proxies:
                 if not proxy in settings.CAS_ALLOWED_PROXIES:
@@ -43,10 +48,10 @@ class CASBackend(ModelBackend):
 
         return None
 
-    
+
     def _verify(self, ticket, service):
         """ Verifies CAS 2.0+ XML-based authentication ticket.
-    
+
             Returns tuple (username, [proxy URLs]) on success or None on failure.
         """
         params = {'ticket': ticket, 'service': service}
@@ -54,16 +59,16 @@ class CASBackend(ModelBackend):
             params.update({'pgtUrl': settings.CAS_PROXY_CALLBACK})
         if settings.CAS_RENEW:
             params.update({'renew': 'true'})
-    
+
         page = urlopen(urljoin(settings.CAS_SERVER_URL, 'proxyValidate') + '?' + urlencode(params))
-    
+
         try:
             response = minidom.parseString(page.read())
             if response.getElementsByTagName('cas:authenticationFailure'):
-                logger.warn("Authentication failed from CAS server: %s", 
+                logger.warn("Authentication failed from CAS server: %s",
                             response.getElementsByTagName('cas:authenticationFailure')[0].firstChild.nodeValue)
                 return (None, None)
-    
+
             username = response.getElementsByTagName('cas:user')[0].firstChild.nodeValue
             proxies = []
             if response.getElementsByTagName('cas:proxyGrantingTicket'):
@@ -80,7 +85,7 @@ class CASBackend(ModelBackend):
                     pgtIou.delete()
                 except:
                     logger.error("Failed to do proxy authentication.", exc_info=True)
-    
+
             logger.debug("Cas proxy authentication succeeded for %s with proxies %s", username, proxies)
             return (username, proxies)
         except Exception as e:
@@ -91,12 +96,12 @@ class CASBackend(ModelBackend):
 
 
     def _get_pgtiou(self, pgt):
-        """ Returns a PgtIOU object given a pgt. 
-        
-            The PgtIOU (tgt) is set by the CAS server in a different request that has 
-            completed before this call, however, it may not be found in the database 
-            by this calling thread, hence the attempt to get the ticket is retried 
-            for up to 5 seconds. This should be handled some better way. 
+        """ Returns a PgtIOU object given a pgt.
+
+            The PgtIOU (tgt) is set by the CAS server in a different request that has
+            completed before this call, however, it may not be found in the database
+            by this calling thread, hence the attempt to get the ticket is retried
+            for up to 5 seconds. This should be handled some better way.
         """
         pgtIou = None
         retries_left = 5

@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import BACKEND_SESSION_KEY
-from django.contrib.auth.models import User
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ImproperlyConfigured
@@ -16,16 +15,22 @@ from urllib import urlencode, urlopen
 from urlparse import urljoin
 from xml.dom import minidom
 
+try:
+    from django.contrib.auth.models import User
+except:
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
 __all__ = ['Tgt']
 
 class Tgt(models.Model):
     """
     Model representing CAS ticket granting tickets. It can be used
-    to retrieve proxy granting tickets for backend web services 
+    to retrieve proxy granting tickets for backend web services
     """
     username = models.CharField(_('username'), max_length = 255, unique = True)
     tgt = models.CharField(_('ticket granting ticket'), max_length = 255)
-    
+
     class Meta:
         db_table = 'django_cas_tgt'
         verbose_name = _('ticket granting ticket')
@@ -136,10 +141,10 @@ def delete_service_ticket(sender, **kwargs):
 
 @receiver(post_delete, sender=Session)
 def delete_old_session_service_tickets(sender, instance, **kwargs):
-    """ Deletes session service tickets when mapped sessions are deleted 
+    """ Deletes session service tickets when mapped sessions are deleted
         from the database. Note that this does not catch the case with
         cached sessions that are not mapped to ordinary Django models.
-        
+
         You have to run the django-admin command purge_session_service_tickets
         if you don't have sessions mapped to the database.
     """
@@ -149,7 +154,7 @@ def delete_old_session_service_tickets(sender, instance, **kwargs):
 
 @receiver(post_save, sender=PgtIOU)
 def delete_old_tickets(**kwargs):
-    """ Delete tickets if they are over 2 days old 
+    """ Delete tickets if they are over 2 days old
         kwargs = ['raw', 'signal', 'instance', 'sender', 'created']
     """
     sender = kwargs.get('sender')
