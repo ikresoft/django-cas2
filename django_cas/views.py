@@ -84,7 +84,7 @@ def _logout_url(request, next_page):
 
 
 def _single_sign_out(request):
-    single_sign_out_request = request.POST.get('logoutRequest')
+    single_sign_out_request = request.body
     request.session = _get_session(single_sign_out_request)
     request.user = auth.get_user(request)
     logger.debug("Got single sign out callback from CAS for user %s session %s",
@@ -103,7 +103,7 @@ def login(request):
         root = tree.getroot()
         signout_request = root.tag.find('LogoutRequest') > -1
         logger.debug(xml)
-    if settings.CAS_SINGLE_SIGN_OUT and (signout_request or request.POST.get('logoutRequest') ):
+    if settings.CAS_SINGLE_SIGN_OUT and signout_request:
         return _single_sign_out(request)
 
     next_page = _redirect_url(request)
