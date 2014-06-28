@@ -95,8 +95,15 @@ def _single_sign_out(request):
 @csrf_exempt
 def login(request):
     """ Forwards to CAS login URL or verifies CAS ticket. """
+    signout_request = False
+    if request.method == 'POST':
+        from xml.etree.ElementTree import ElementTree, fromstring
+        xml = request.body
+        tree = ElementTree(fromstring(xml))
+        root = tree.getroot()
+        signout_request = root.tag.find('LogoutRequest') > -1
 
-    if settings.CAS_SINGLE_SIGN_OUT and request.POST.get('logoutRequest'):
+    if settings.CAS_SINGLE_SIGN_OUT and (signout_request or request.POST.get('logoutRequest') ):
         return _single_sign_out(request)
 
     next_page = _redirect_url(request)
