@@ -102,7 +102,7 @@ def login(request):
         tree = ElementTree(fromstring(xml))
         root = tree.getroot()
         signout_request = root.tag.find('LogoutRequest') > -1
-
+        logger.debug(xml)
     if settings.CAS_SINGLE_SIGN_OUT and (signout_request or request.POST.get('logoutRequest') ):
         return _single_sign_out(request)
 
