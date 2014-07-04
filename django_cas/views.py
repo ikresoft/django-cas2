@@ -78,8 +78,8 @@ def _logout_url(request, next_page):
 
     logout_url = urljoin(settings.CAS_SERVER_URL, 'logout')
     if next_page:
-        logout_url += '?' + urlencode({'url': _service(request) + next_page})
-
+        #logout_url += '?' + urlencode({'url': _service(request) + next_page})
+        logout_url += '?' + urlencode({'url': next_page})
     return logout_url
 
 
@@ -150,7 +150,6 @@ def _get_session(logout_response):
 
 def logout(request):
     """ Redirects to CAS logout page. """
-
     auth.logout(request)
     next_page = _redirect_url(request)
     if settings.CAS_LOGOUT_COMPLETELY:
