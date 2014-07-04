@@ -114,7 +114,12 @@ def _is_cas_backend(session):
     """ Checks if the auth backend is CASBackend """
     backend = session.get(BACKEND_SESSION_KEY)
     from django_cas.backends import CASBackend
-    return backend == '{0.__module__}.{0.__name__}'.format(CASBackend)
+    from django.utils.importlib import import_module
+    #return backend == '{0.__module__}.{0.__name__}'.format(CASBackend)
+    _module, _class = backend.rsplit('.', 1)
+    module = import_module(_module)
+    klass = getattr(module, _class)
+    return issubclass(klass, CASBackend)
 
 
 @receiver(user_logged_in)
